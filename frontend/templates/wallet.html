@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block body %}
+<div class="wrap" style="padding-top:1.4rem">
+  <div class="sec-head">
+    <div>
+      <div class="eyebrow">// WALLET</div>
+      <h2>Coins &amp; transactions</h2>
+    </div>
+    <span class="live-dot"><i></i><span>OFFLINE</span></span>
+  </div>
+
+  <div id="wallet-gate" class="hidden">
+    <div class="empty">
+      <div class="big">🔒</div>
+      <b>Sign in to open your wallet</b>
+      <p class="muted" style="font-size:.9rem">Your coins, top-ups and ledger live on your account.</p>
+      <button class="btn btn-primary" type="button" data-signin style="margin-top:.8rem">Sign in with Google</button>
+    </div>
+  </div>
+
+  <div id="wallet-main" class="hidden">
+    <div class="grid" style="grid-template-columns:minmax(0,1fr) minmax(260px,.62fr);align-items:start">
+      <div>
+        <div class="card corner neon-edge">
+          <div class="eyebrow" style="margin:0">CURRENT BALANCE</div>
+          <div class="spread" style="align-items:flex-end;margin-top:.3rem">
+            <span class="coin coin-lg"><span data-coin-balance>0</span></span>
+            <a class="btn btn-primary" href="#packages">Buy coins</a>
+          </div>
+          <div class="divider"></div>
+          <div class="grid grid-3" style="gap:.7rem">
+            <div class="card stat"><div class="lbl">Credited</div><div class="val" id="w-credited">—</div></div>
+            <div class="card stat"><div class="lbl">Spent</div><div class="val" id="w-spent">—</div></div>
+            <div class="card stat"><div class="lbl">Pending</div><div class="val" id="w-pending">—</div></div>
+          </div>
+          <p class="hint" style="margin-top:.8rem" id="w-frozen-note"></p>
+        </div>
+
+        <div class="card" style="margin-top:1.1rem" id="pending-card">
+          <div class="card-title"><span class="dot"></span>Pending verification</div>
+          <div id="pending-list"><div class="skel"></div></div>
+        </div>
+
+        <div class="card" style="margin-top:1.1rem" id="packages">
+          <div class="card-title"><span class="dot"></span>Coin packages</div>
+          <div class="grid grid-3" id="pkg-grid">
+            <div class="skel" style="height:150px"></div>
+            <div class="skel" style="height:150px"></div>
+            <div class="skel" style="height:150px"></div>
+          </div>
+          <p class="hint" style="margin-top:.9rem" id="pay-instructions"></p>
+        </div>
+      </div>
+
+      <aside class="card corner" style="position:sticky;top:calc(var(--head-h) + 1rem)">
+        <div class="card-title"><span class="dot"></span>How top-ups work</div>
+        <ol class="muted" style="padding-left:1.1rem;margin:0;font-size:.88rem;line-height:1.9">
+          <li>Pick a package and send the exact BDT amount to the listed number.</li>
+          <li>Upload the payment screenshot — this only opens a request.</li>
+          <li>Status becomes <span class="badge st-PENDING">PENDING VERIFICATION</span>.</li>
+          <li>A Master or authorised Seller checks it and confirms.</li>
+          <li>Coins land in your wallet and you get a notification.</li>
+        </ol>
+        <div class="divider"></div>
+        <p class="hint">Uploading a screenshot never credits coins by itself, and a request can
+          only ever be confirmed once — the ledger enforces it server-side.</p>
+      </aside>
+    </div>
+
+    <div class="card" style="margin-top:1.1rem">
+      <div class="sec-head" style="margin:0 0 .8rem">
+        <div class="card-title" style="margin:0"><span class="dot"></span>Transaction history</div>
+        <select id="txn-filter" aria-label="Filter transactions">
+          <option value="">All types</option>
+          <option value="COIN_PURCHASE">Coin purchase</option>
+          <option value="COIN_SPENT">Coin spent</option>
+          <option value="COIN_REFUND">Coin refund</option>
+          <option value="BONUS_COIN">Bonus coin</option>
+          <option value="ADMIN_CREDIT">Admin credit</option>
+          <option value="ADMIN_DEBIT">Admin debit</option>
+        </select>
+      </div>
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>Transaction ID</th><th>Date</th><th>Type</th><th class="right">Coins</th>
+              <th class="right">BDT</th><th>Method</th><th>Status</th><th>Approved by</th>
+              <th class="right">Balance after</th>
+            </tr>
+          </thead>
+          <tbody id="txn-body">
+            <tr><td colspan="9"><div class="skel"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="center" style="margin-top:1rem">
+        <button class="btn hidden" id="txn-more" type="button">Load more</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/shell.js" defer></script>
+<script src="/static/js/wallet.js" defer></script>
+{% endblock %}

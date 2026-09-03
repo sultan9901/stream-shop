@@ -1,0 +1,87 @@
+# ==========================================================================
+# STREAM CORPORATION — backend runtime dependencies (fully pinned).
+#
+# Every version below is exactly what `pip freeze` reports in .venv on
+# Python 3.14.7 — the interpreter and package set the 44-test suite passed
+# on. `==` everywhere (no ranges) so the Docker image (linux/amd64) rebuilds
+# that same environment byte-for-byte.
+#
+# The list is curated, not a frozen lockfile: it names every distribution our
+# own code imports plus the drivers/servers/runtime pieces that are load-
+# bearing but never imported by name. Pure transitives (typing-extensions,
+# annotated-types, pydantic-core, typing-inspection, annotated-doc, MarkupSafe,
+# Mako, click, h11, httpcore, certifi, idna, cffi, pycparser,
+# argon2-cffi-bindings, colorama) resolve from these pins.
+#
+# Test-only tooling lives in requirements-dev.txt.
+# ==========================================================================
+
+# --- Web framework / ASGI ---
+fastapi==0.141.1
+# starlette is imported directly (app/main.py: StarletteHTTPException,
+# CORSMiddleware, TrustedHostMiddleware), so it is pinned in its own right
+# rather than left to FastAPI's `starlette>=0.46.0` range.
+starlette==1.6.0
+# Plain uvicorn, deliberately NOT uvicorn[standard]: the extras
+# (httptools, uvloop, watchfiles, PyYAML) are not installed in this venv, so
+# claiming them here would pin an environment the tests never ran in. uvicorn's
+# base deps are only click + h11, which means the WebSocket protocol has to be
+# supplied separately -> `websockets` below, required by GET /ws
+# (app/routes/ws.py). On Linux/amd64 `uvloop` and `httptools` can be added later
+# for extra throughput; both are optional and drop-in (uvicorn auto-detects).
+uvicorn==0.52.4
+websockets==17.1
+# multipart parser FastAPI needs for the Form(...)/File(...)/UploadFile handlers
+# in routes/wallet.py (payment screenshots) and routes/master_catalog.py.
+python-multipart==0.0.32
+# server-side HTML rendering via fastapi.templating.Jinja2Templates
+# (app/templating.py). NOT a base dependency of fastapi or starlette.
+Jinja2==3.1.6
+# signed/tamper-evident tokens in app/auth/security.py
+itsdangerous==2.2.0
+# async runtime starlette (base dep) and httpx run on; not imported by our code,
+# pinned only to lock the tested version.
+anyio==4.14.2
+
+# --- Data / ORM / migrations ---
+SQLAlchemy==2.0.52
+# alembic is runtime, not dev: the container entrypoint runs `alembic upgrade head`.
+alembic==1.19.1
+# required by SQLAlchemy's asyncio extension (C-level greenlet switching, not an
+# import of ours); SQLAlchemy only declares it conditionally per platform, so pin it.
+greenlet==3.5.5
+# asyncpg is the async PostgreSQL driver SQLAlchemy uses for the compose/Docker
+# target DSN `postgresql+asyncpg://stream@db/stream_corporation`. No psycopg /
+# psycopg2 is needed or installed — the app has no sync engine anywhere.
+asyncpg==0.31.0
+# async SQLite driver for config.py's default DSN (sqlite+aiosqlite) and for the
+# test suite, which points DATABASE_URL at tests/.tmp/stream_test.db.
+aiosqlite==0.22.1
+
+# --- Validation / settings ---
+pydantic==2.13.5
+pydantic-settings==2.15.0
+# base dep of pydantic-settings and load-bearing: it is what reads <repo-root>/.env
+# for app/config.py. Pinned so .env parsing behaviour cannot drift.
+python-dotenv==1.2.3
+
+# --- Security ---
+# Argon2id password hashing (app/auth/security.py). Passwords are never stored
+# or logged in plaintext.
+argon2-cffi==25.1.0
+
+# --- HTTP client (Google OAuth token/userinfo exchange) ---
+# app/auth/google.py; also the transport the test suite drives the ASGI app with.
+httpx==0.28.1
+
+# --- Cache / pub-sub / rate limiting ---
+# redis.asyncio in app/services/cache.py: rate-limit counters and the
+# cross-worker WebSocket fan-out channel. Optional at runtime (REDIS_URL empty
+# falls back to in-process), but the dependency is always installed.
+redis==8.1.0
+
+# --- Email delivery ---
+aiosmtplib==5.1.2
+
+# --- Images (payment screenshot + product image validation) ---
+pillow==12.3.0

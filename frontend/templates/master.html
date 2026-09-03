@@ -1,0 +1,358 @@
+{% extends "base.html" %}
+
+{#
+  STREAM CORPORATION — Master Control (§4, §38–§44).
+
+  This template is deliberately dumb: it ships an empty login gate and an empty
+  console shell. It never receives master data from the server renderer, so a
+  viewer who opens /master downloads nothing but markup — every number, row and
+  button below is filled in by master.js from endpoints guarded by
+  ``require_master``. Authorisation is decided in the API, never here.
+#}
+
+{% block title %}Master Control — {{ app_name }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="/static/css/panel.css">{% endblock %}
+
+{# the public marketplace nav has no business on a staff surface #}
+{% block nav %}<span class="badge badge-violet" style="margin-left:.6rem">MASTER TERMINAL</span>{% endblock %}
+
+{% block head_actions %}
+<button class="btn btn-icon btn-ghost bell hidden" id="sc-bell" type="button" aria-label="Notifications">
+  🔔<span class="bell-dot hidden" id="sc-bell-dot">0</span>
+</button>
+<div id="sc-user" class="row"></div>
+{% endblock %}
+
+{% block body %}
+
+<!-- ===================================================== login gate -->
+<section class="gate" id="m-gate">
+  <div class="card corner neon-edge gate-box" id="m-gate-box">
+    <div class="eyebrow">// RESTRICTED SURFACE</div>
+    <h2>Master Control</h2>
+
+    <form id="m-login" autocomplete="off" novalidate>
+      <div class="field">
+        <label for="m-user">Username</label>
+        <input id="m-user" name="username" type="text" maxlength="64" required
+               autocomplete="username" placeholder="Admin">
+      </div>
+      <div class="field">
+        <label for="m-pass">Password</label>
+        <input id="m-pass" name="password" type="password" maxlength="256" required
+               autocomplete="current-password" placeholder="••••••••">
+      </div>
+      <div class="err hidden" id="m-login-err"></div>
+      <button class="btn btn-primary btn-block btn-lg" type="submit" id="m-login-go">Authenticate</button>
+    </form>
+
+    <div class="gate-note">
+      This account binds to one device. A login from anywhere else is refused until a
+      Master resets the binding.
+    </div>
+    <p class="hint" style="text-align:center;margin-top:1rem">
+      Not staff? <a href="/">Return to the marketplace</a>.
+    </p>
+  </div>
+</section>
+<!-- ===================================================== console shell -->
+<div class="wrap console hidden" id="m-console">
+
+  <aside class="card side" id="m-side">
+    <div class="side-who">
+      <b id="m-who">—</b>
+      <span id="m-who-code">MASTER</span>
+    </div>
+    <nav class="side-nav" id="m-nav" aria-label="Master sections">
+      <button type="button" class="active" data-view="overview"><span class="ico">◈</span>Overview</button>
+      <button type="button" data-view="payments"><span class="ico">₿</span>Payments
+        <span class="pill hidden" id="m-pending-pill">0</span></button>
+      <button type="button" data-view="orders"><span class="ico">▤</span>Orders</button>
+      <button type="button" data-view="products"><span class="ico">◱</span>Products</button>
+      <button type="button" data-view="categories"><span class="ico">⌗</span>Categories</button>
+      <button type="button" data-view="coins"><span class="ico">◎</span>Coin packages</button>
+      <button type="button" data-view="methods"><span class="ico">⊞</span>Payment methods</button>
+      <button type="button" data-view="customers"><span class="ico">☺</span>Customers</button>
+      <button type="button" data-view="staff"><span class="ico">⚿</span>Staff accounts</button>
+      <button type="button" data-view="settings"><span class="ico">⚙</span>Settings</button>
+      <button type="button" data-view="audit"><span class="ico">≡</span>Audit log</button>
+    </nav>
+    <div class="divider"></div>
+    <button class="btn btn-sm btn-ghost btn-block" type="button" id="m-password">Change password</button>
+    <button class="btn btn-sm btn-danger btn-block" type="button" id="m-logout"
+            style="margin-top:.4rem">Sign out</button>
+  </aside>
+
+  <div id="m-views">
+    <!-- ------------------------------------------------------- overview -->
+    <section class="view active" data-pane="overview">
+      <div class="view-head">
+        <div>
+          <div class="eyebrow">// COMMAND DECK</div>
+          <h2>Overview</h2>
+        </div>
+        <div class="row" style="gap:.4rem">
+          <select id="m-range" aria-label="Chart range" style="min-width:130px">
+            <option value="7">Last 7 days</option>
+            <option value="14" selected>Last 14 days</option>
+            <option value="30">Last 30 days</option>
+            <option value="90">Last 90 days</option>
+          </select>
+          <button class="btn btn-sm" type="button" id="m-refresh">Refresh</button>
+        </div>
+      </div>
+      <div class="grid grid-4" id="m-stats"><div class="skel"></div><div class="skel"></div>
+        <div class="skel"></div><div class="skel"></div></div>
+
+      <div class="grid grid-2" style="margin-top:1.2rem">
+        <div class="card chart-box">
+          <div class="card-title">Orders &amp; coins spent</div>
+          <canvas id="m-chart-orders" height="200"></canvas>
+          <div class="chart-legend">
+            <span><i style="background:var(--neon)"></i>Orders</span>
+            <span><i style="background:var(--violet)"></i>Coins spent</span>
+          </div>
+        </div>
+        <div class="card chart-box">
+          <div class="card-title">Coins purchased &amp; revenue</div>
+          <canvas id="m-chart-coins" height="200"></canvas>
+          <div class="chart-legend">
+            <span><i style="background:var(--ok)"></i>Coins purchased</span>
+            <span><i style="background:var(--warn)"></i>Revenue (৳)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-2" style="margin-top:1.2rem">
+        <div class="card">
+          <div class="card-title">Waiting for verification</div>
+          <div id="m-ov-pending"><div class="skel"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Latest orders</div>
+          <div id="m-ov-orders"><div class="skel"></div></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:1.2rem">
+        <div class="card-title">Best sellers</div>
+        <div id="m-ov-top"><div class="skel"></div></div>
+      </div>
+    </section>
+    <!-- ------------------------------------------------------- payments -->
+    <section class="view" data-pane="payments">
+      <div class="view-head">
+        <div>
+          <div class="eyebrow">// COIN TOP-UP VERIFICATION</div>
+          <h2>Payment requests</h2>
+        </div>
+        <div class="tabs" id="m-pay-tabs">
+          <button class="tab active" type="button" data-status="PENDING">Pending
+            <span class="cnt" data-count="PENDING">0</span></button>
+          <button class="tab" type="button" data-status="CONFIRMED">Confirmed
+            <span class="cnt" data-count="CONFIRMED">0</span></button>
+          <button class="tab" type="button" data-status="REJECTED">Rejected
+            <span class="cnt" data-count="REJECTED">0</span></button>
+          <button class="tab" type="button" data-status="">All
+            <span class="cnt" data-count="">0</span></button>
+        </div>
+      </div>
+      <p class="hint" style="margin:-.6rem 0 1rem">
+        Confirming credits the coins exactly once — the server runs the transition as a
+        conditional update, so a second click can never double-credit. Rejecting never adds coins.
+      </p>
+      <div id="m-pay-list"><div class="skel" style="height:120px"></div></div>
+      <div class="center" style="margin-top:1rem">
+        <button class="btn btn-ghost hidden" type="button" id="m-pay-more">Load more</button>
+      </div>
+    </section>
+
+    <!-- --------------------------------------------------------- orders -->
+    <section class="view" data-pane="orders">
+      <div class="view-head">
+        <div>
+          <div class="eyebrow">// FULFILMENT</div>
+          <h2>Orders</h2>
+        </div>
+        <div class="tabs" id="m-ord-tabs">
+          <button class="tab active" type="button" data-status="">All
+            <span class="cnt" data-count="total">0</span></button>
+          <button class="tab" type="button" data-status="PAID">Paid
+            <span class="cnt" data-count="PAID">0</span></button>
+          <button class="tab" type="button" data-status="PROCESSING">Processing
+            <span class="cnt" data-count="PROCESSING">0</span></button>
+          <button class="tab" type="button" data-status="COMPLETED">Completed
+            <span class="cnt" data-count="COMPLETED">0</span></button>
+          <button class="tab" type="button" data-status="REFUNDED">Refunded
+            <span class="cnt" data-count="REFUNDED">0</span></button>
+          <button class="tab" type="button" data-status="CANCELLED">Cancelled
+            <span class="cnt" data-count="CANCELLED">0</span></button>
+        </div>
+      </div>
+      <div class="filters">
+        <input class="grow" id="m-ord-q" type="search" placeholder="Order ID, Gmail or product…">
+        <select id="m-ord-seller" aria-label="Seller"><option value="">Every seller</option></select>
+      </div>
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead><tr>
+            <th>Order ID</th><th>Customer</th><th>Product</th><th>Seller</th><th class="right">Coins</th>
+            <th>Status</th><th>Delivery</th><th>Date</th><th class="right">Actions</th>
+          </tr></thead>
+          <tbody id="m-ord-body"><tr><td colspan="9"><div class="skel"></div></td></tr></tbody>
+        </table>
+      </div>
+      <div class="center" style="margin-top:1rem">
+        <button class="btn btn-ghost hidden" type="button" id="m-ord-more">Load more</button>
+      </div>
+    </section>
+    <!-- ------------------------------------------------------- products -->
+    <section class="view" data-pane="products">
+      <div class="view-head">
+        <div>
+          <div class="eyebrow">// CATALOGUE</div>
+          <h2>Products</h2>
+        </div>
+        <button class="btn btn-primary btn-sm" type="button" id="m-prod-new">+ New product</button>
+      </div>
+      <div class="filters">
+        <input class="grow" id="m-prod-q" type="search" placeholder="Search products…">
+        <select id="m-prod-cat" aria-label="Category"><option value="">Every category</option></select>
+        <select id="m-prod-seller" aria-label="Seller"><option value="">Every seller</option></select>
+      </div>
+      <div id="m-prod-list"><div class="skel" style="height:120px"></div></div>
+      <div class="center" style="margin-top:1rem">
+        <button class="btn btn-ghost hidden" type="button" id="m-prod-more">Load more</button>
+      </div>
+    </section>
+
+    <!-- ----------------------------------------------------- categories -->
+    <section class="view" data-pane="categories">
+      <div class="view-head">
+        <div>
+          <div class="eyebrow">// TAXONOMY</div>
+          <h2>Categories</h2>
+        </div>
+        <button class="btn btn-primary btn-sm" type="button" id="m-cat-new">+ New category</button>
+      </div>
+      <div id="m-cat-list"><div class="skel" style="height:120px"></div></div>
+    </section>
+
+    <!-- ---------------------------------------------------------- coins -->
+    <section class="view" data-pane="coins">
+      <div class="view-head">
+        <div>
+          <div class="eyebrow">// COIN ECONOMY</div>
+          <h2>Coin packages</h2>
+        </div>
+        <button class="btn btn-primary btn-sm" type="button" id="m-pkg-new">+ New package</button>
+      </div>
+      <p class="hint" style="margin:-.6rem 0 1rem">
+        These are the only prices a viewer can buy at — the Buy&nbsp;Coins popup is built from
+        this list, and the coin total credited on confirmation comes from the stored package,
+        never from the browser.
+      </p>
+      <div id="m-pkg-list"><div class="skel" style="height:120px"></div></div>
+    </section>
+
+    <!-- -------------------------------------------------------- methods -->
+    <section class="view" data-pane="methods">
+      <div class="view-head">
+        <div>
+          <div class="eyebrow">// CASH-IN CHANNELS</div>
+          <h2>Payment methods</h2>
+        </div>
+        <button class="btn btn-primary btn-sm" type="button" id="m-pm-new">+ New method</button>
+      </div>
+      <div id="m-pm-list"><div class="skel" style="height:120px"></div></div>
+    </section>
+    <!-- ------------------------------------------------------ customers -->
+    <section class="view" data-pane="customers">
+      <div class="view-head">
+        <div>
+          <div class="eyebrow">// PEOPLE</div>
+          <h2>Customers</h2>
+        </div>
+        <span class="badge" id="m-cus-total">0 total</span>
+      </div>
+      <div class="filters">
+        <input class="grow" id="m-cus-q" type="search"
+               placeholder="Gmail, Customer ID, name or Order ID…">
+        <button class="btn btn-sm" type="button" id="m-cus-go">Search</button>
+      </div>
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead><tr>
+            <th>Customer ID</th><th>Name</th><th>Gmail</th><th class="right">Balance</th>
+            <th class="right">Orders</th><th>Joined</th><th class="right">Actions</th>
+          </tr></thead>
+          <tbody id="m-cus-body"><tr><td colspan="7"><div class="skel"></div></td></tr></tbody>
+        </table>
+      </div>
+      <div class="center" style="margin-top:1rem">
+        <button class="btn btn-ghost hidden" type="button" id="m-cus-more">Load more</button>
+      </div>
+    </section>
+
+    <!-- ---------------------------------------------------------- staff -->
+    <section class="view" data-pane="staff">
+      <div class="view-head">
+        <div>
+          <div class="eyebrow">// ACCESS CONTROL</div>
+          <h2>Staff accounts</h2>
+        </div>
+        <div class="row" style="gap:.4rem">
+          <button class="btn btn-sm" type="button" id="m-mst-new">+ Master</button>
+          <button class="btn btn-primary btn-sm" type="button" id="m-slr-new">+ Seller</button>
+        </div>
+      </div>
+      <div class="filters">
+        <input class="grow" id="m-staff-q" type="search" placeholder="Username or staff code…">
+      </div>
+      <div class="card" style="margin-bottom:1.2rem">
+        <div class="card-title">Masters</div>
+        <div id="m-mst-list"><div class="skel"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Sellers</div>
+        <div id="m-slr-list"><div class="skel"></div></div>
+      </div>
+    </section>
+
+    <!-- ------------------------------------------------------- settings -->
+    <section class="view" data-pane="settings">
+      <div class="view-head">
+        <div>
+          <div class="eyebrow">// SYSTEM</div>
+          <h2>Settings</h2>
+        </div>
+        <button class="btn btn-primary btn-sm" type="button" id="m-set-save">Save changes</button>
+      </div>
+      <form id="m-set-form"><div class="skel" style="height:140px"></div></form>
+    </section>
+
+    <!-- ---------------------------------------------------------- audit -->
+    <section class="view" data-pane="audit">
+      <div class="view-head">
+        <div>
+          <div class="eyebrow">// IMMUTABLE TRAIL</div>
+          <h2>Audit log</h2>
+        </div>
+        <span class="badge" id="m-aud-total">0 entries</span>
+      </div>
+      <div class="filters">
+        <input class="grow" id="m-aud-action" type="search"
+               placeholder="Filter by action, e.g. wallet.adjust">
+      </div>
+      <div class="card" id="m-aud-list"><div class="skel"></div></div>
+      <div class="center" style="margin-top:1rem">
+        <button class="btn btn-ghost hidden" type="button" id="m-aud-more">Load more</button>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/master.js" defer></script>
+{% endblock %}

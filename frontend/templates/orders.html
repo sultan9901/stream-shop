@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block body %}
+<div class="wrap" style="padding-top:1.4rem">
+  <div class="sec-head">
+    <div>
+      <div class="eyebrow">// ORDERS</div>
+      <h2>My purchases</h2>
+    </div>
+    <a class="btn btn-sm" href="/">Browse software</a>
+  </div>
+
+  <div id="orders-gate" class="hidden">
+    <div class="empty">
+      <div class="big">🔒</div>
+      <b>Sign in to see your orders</b>
+      <p class="muted" style="font-size:.9rem">Orders, delivery status and download links live on your account.</p>
+      <button class="btn btn-primary" type="button" data-signin style="margin-top:.8rem">Sign in with Google</button>
+    </div>
+  </div>
+
+  <div id="orders-main" class="hidden">
+    <div class="tabs" id="order-tabs" role="tablist">
+      <button class="tab active" type="button" data-status="">All <span class="cnt" data-count="">0</span></button>
+      <button class="tab" type="button" data-status="PAID">Paid <span class="cnt" data-count="PAID">0</span></button>
+      <button class="tab" type="button" data-status="PROCESSING">Processing <span class="cnt" data-count="PROCESSING">0</span></button>
+      <button class="tab" type="button" data-status="COMPLETED">Completed <span class="cnt" data-count="COMPLETED">0</span></button>
+      <button class="tab" type="button" data-status="REFUNDED">Refunded <span class="cnt" data-count="REFUNDED">0</span></button>
+      <button class="tab" type="button" data-status="CANCELLED">Cancelled <span class="cnt" data-count="CANCELLED">0</span></button>
+    </div>
+
+    <div class="card" style="margin-top:1rem">
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>Order ID</th><th>Product</th><th class="right">Coins</th>
+              <th>Status</th><th>Delivery</th><th>Date</th><th class="right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="order-body">
+            <tr><td colspan="7"><div class="skel"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="center" style="margin-top:1rem">
+        <button class="btn hidden" id="order-more" type="button">Load more</button>
+      </div>
+    </div>
+
+    <p class="hint" style="margin-top:1rem">
+      Download links are private, expire and are capped by download count. Ask for a fresh
+      one any time — the old link stops working when an order is refunded.
+    </p>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/shell.js" defer></script>
+<script src="/static/js/orders.js" defer></script>
+{% endblock %}

@@ -1,0 +1,114 @@
+/* ===========================================================================
+   STREAM CORPORATION — Master & Seller console layer.
+   Loaded only by /master and /seller on top of core.css.
+   ======================================================================== */
+
+.gate { min-height: calc(100vh - var(--head-h)); display: grid; place-items: center; padding: 2rem 0; }
+.gate-box { width: min(430px, calc(100% - 2rem)); padding: 1.8rem; }
+.gate-box .eyebrow { text-align: center; }
+.gate-box h2 { text-align: center; margin-bottom: 1.4rem; }
+.gate-note {
+  margin-top: 1.1rem; padding: .7rem .85rem; border-radius: var(--radius-sm);
+  border: 1px solid rgba(255,176,32,.3); background: rgba(255,176,32,.08);
+  font-size: .78rem; color: #ffdca8; font-family: var(--mono);
+}
+
+/* ---- console shell ------------------------------------------------------ */
+.console { display: grid; grid-template-columns: 232px minmax(0, 1fr); gap: 1.2rem; padding: 1.4rem 0 3rem; align-items: start; }
+.side { position: sticky; top: calc(var(--head-h) + 1rem); padding: .8rem; }
+.side-who { padding: .7rem .8rem; border-radius: var(--radius-sm); background: rgba(0,240,255,.07);
+  border: 1px solid var(--line); margin-bottom: .8rem; }
+.side-who b { display: block; font-size: .9rem; }
+.side-who span { font-family: var(--mono); font-size: .68rem; color: var(--neon-dim); }
+.side-nav { display: flex; flex-direction: column; gap: .18rem; }
+.side-nav button {
+  display: flex; align-items: center; gap: .55rem; width: 100%; text-align: left;
+  padding: .58rem .7rem; border-radius: var(--radius-sm); border: 1px solid transparent;
+  background: transparent; color: var(--muted); font: inherit; font-size: .86rem;
+  font-weight: 600; cursor: pointer; transition: all .16s ease;
+}
+.side-nav button:hover { color: var(--text); background: rgba(255,255,255,.05); }
+.side-nav button.active { color: var(--neon); background: rgba(0,240,255,.1); border-color: var(--line); }
+.side-nav button .ico { width: 1.2em; text-align: center; }
+.side-nav button .pill {
+  margin-left: auto; font-family: var(--mono); font-size: .66rem; padding: .05rem .4rem;
+  border-radius: 999px; background: var(--bad); color: #fff; font-weight: 800;
+}
+.view { display: none; }
+.view.active { display: block; animation: view-in .22s ease; }
+@keyframes view-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.view-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; margin-bottom: 1.1rem; flex-wrap: wrap; }
+.view-head h2 { margin: 0; }
+/* ---- charts (hand-drawn canvas, no chart library) ----------------------- */
+.chart-box { padding: 1rem 1.1rem; }
+.chart-box canvas { display: block; width: 100%; height: 200px; }
+.chart-legend { display: flex; gap: 1rem; flex-wrap: wrap; font-size: .74rem; color: var(--muted); margin-top: .6rem; }
+.chart-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: .35rem; }
+
+.spark { display: flex; align-items: flex-end; gap: 3px; height: 46px; }
+.spark i { flex: 1 1 auto; background: linear-gradient(180deg, var(--neon), rgba(0,240,255,.15));
+  border-radius: 2px 2px 0 0; min-height: 2px; }
+
+/* ---- review cards (payment verification) -------------------------------- */
+.review { padding: 0; overflow: hidden; }
+.review-top { display: flex; gap: .9rem; padding: .95rem 1.05rem; align-items: flex-start; flex-wrap: wrap; }
+.review-top .who { flex: 1 1 220px; min-width: 0; }
+.review-top .who b { display: block; font-size: .93rem; }
+.review-top .who span { font-family: var(--mono); font-size: .74rem; color: var(--muted); word-break: break-all; }
+.review-amt { text-align: right; font-family: var(--mono); }
+.review-amt .bdt { font-size: 1.15rem; font-weight: 800; color: #fff; }
+.review-amt .cn { font-size: .82rem; color: var(--neon); }
+.review-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .5rem .9rem;
+  padding: .3rem 1.05rem .9rem; font-size: .8rem; }
+.review-meta div span { display: block; font-family: var(--mono); font-size: .66rem;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--faint); }
+.review-acts { display: flex; gap: .5rem; padding: .8rem 1.05rem; border-top: 1px solid var(--line-soft);
+  background: rgba(0,0,0,.2); flex-wrap: wrap; }
+
+.shot-frame { background: #000; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--line-soft); }
+.shot-frame img { display: block; width: 100%; max-height: 70vh; object-fit: contain; }
+
+/* ---- list rows (base primitive lives in core.css) ----------------------- */
+.lrow .thumb { width: 52px; height: 40px; border-radius: 8px; object-fit: cover; flex: 0 0 auto;
+  background: linear-gradient(135deg, rgba(0,240,255,.16), rgba(168,85,247,.16)); }
+.lrow .main { flex: 1 1 auto; min-width: 0; }
+.lrow .main b { display: block; font-size: .9rem; }
+.lrow .main span { font-size: .78rem; color: var(--muted); }
+.lrow .acts { display: flex; gap: .35rem; flex-wrap: wrap; justify-content: flex-end; }
+/* ---- filter bar --------------------------------------------------------- */
+.filters { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; margin-bottom: 1rem; }
+.filters input, .filters select { width: auto; min-width: 150px; }
+.filters .grow { min-width: 200px; }
+
+/* ---- two column form ---------------------------------------------------- */
+.form-grid { display: grid; gap: 0 1rem; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.form-grid .span-2 { grid-column: 1 / -1; }
+
+/* ---- audit feed --------------------------------------------------------- */
+.audit-row { display: grid; grid-template-columns: 150px 1fr; gap: .3rem .9rem; padding: .6rem .2rem;
+  border-bottom: 1px solid rgba(255,255,255,.05); font-size: .84rem; }
+.audit-row .when { font-family: var(--mono); font-size: .72rem; color: var(--faint); }
+.audit-row .act { font-family: var(--mono); font-size: .72rem; color: var(--neon); }
+.audit-row .sum { color: var(--muted); }
+
+/* ---- wallet control ----------------------------------------------------- */
+.wc-dir { display: flex; gap: .4rem; flex-wrap: wrap; }
+.wc-dir label {
+  margin: 0; text-transform: none; letter-spacing: 0; font-size: .82rem; cursor: pointer;
+  padding: .45rem .85rem; border-radius: 999px; border: 1px solid var(--line-soft);
+  background: rgba(255,255,255,.04); display: inline-flex; align-items: center; gap: .4rem; color: var(--muted);
+}
+.wc-dir label:has(input:checked) { color: var(--neon); border-color: var(--line); background: rgba(0,240,255,.1); }
+.wc-dir input { display: none; }
+
+/* ---- responsive console ------------------------------------------------- */
+@media (max-width: 940px) {
+  .console { grid-template-columns: 1fr; }
+  .side { position: static; }
+  .side-nav { flex-direction: row; overflow-x: auto; padding-bottom: .3rem; scrollbar-width: none; }
+  .side-nav::-webkit-scrollbar { display: none; }
+  .side-nav button { width: auto; white-space: nowrap; }
+  .side-nav button .pill { margin-left: .35rem; }
+  .audit-row { grid-template-columns: 1fr; }
+}
+

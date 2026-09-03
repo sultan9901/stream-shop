@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{#
+  STREAM CORPORATION — Seller Console (§7, §33).
+
+  Same shape as master.html and for the same reason: the server sends markup with
+  no seller data in it. Every row is fetched from an endpoint behind
+  ``require_seller``, and each of those queries is scoped to
+  ``seller_id == principal.user.id`` — a seller cannot read another seller's
+  orders even by editing this page. The payment-verification pane is hidden until
+  /api/seller/overview reports ``can_verify_payments``, and the four payment
+  endpoints refuse the request anyway when it is false.
+#}
+
+{% block title %}Seller Console — {{ app_name }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="/static/css/panel.css">{% endblock %}
+
+{% block nav %}<span class="badge badge-neon" style="margin-left:.6rem">SELLER TERMINAL</span>{% endblock %}
+
+{% block head_actions %}
+<button class="btn btn-icon btn-ghost bell hidden" id="sc-bell" type="button" aria-label="Notifications">
+  🔔<span class="bell-dot hidden" id="sc-bell-dot">0</span>
+</button>
+<div id="sc-user" class="row"></div>
+{% endblock %}
+
+{% block body %}
+
+<!-- ===================================================== login gate -->
+<section class="gate" id="s-gate">
+  <div class="card corner neon-edge gate-box" id="s-gate-box">
+    <div class="eyebrow">// RESTRICTED SURFACE</div>
+    <h2>Seller Console</h2>
+
+    <form id="s-login" autocomplete="off" novalidate>
+      <div class="field">
+        <label for="s-user">Username</label>
+        <input id="s-user" name="username" type="text" maxlength="64" required
+               autocomplete="username" placeholder="seller">
+      </div>
+      <div class="field">
+        <label for="s-pass">Password</label>
+        <input id="s-pass" name="password" type="password" maxlength="256" required
+               autocomplete="current-password" placeholder="••••••••">
+      </div>
+      <div class="err hidden" id="s-login-err"></div>
+      <button class="btn btn-primary btn-block btn-lg" type="submit" id="s-login-go">Authenticate</button>
+    </form>
+
+    <div class="gate-note">
+      Seller accounts are created by a Master. This one binds to a single device —
+      a login from anywhere else is refused until a Master resets the binding.
+    </div>
+    <p class="hint" style="text-align:center;margin-top:1rem">
+      Not staff? <a href="/">Return to the marketplace</a>.
+    </p>
+  </div>
+</section>
+<!-- ===================================================== console shell -->
+<div class="wrap console hidden" id="s-console">
+
+  <aside class="card side" id="s-side">
+    <div class="side-who">
+      <b id="s-who">—</b>
+      <span id="s-who-code">SELLER</span>
+    </div>
+    <nav class="side-nav" id="s-nav" aria-label="Seller sections">
+      <button type="button" class="active" data-view="overview"><span class="ico">◈</span>Overview</button>
+      <button type="button" data-view="orders"><span class="ico">▤</span>My orders</button>
+      <button type="button" data-view="products"><span class="ico">◱</span>My products</button>
+      <button type="button" class="hidden" data-view="payments" id="s-nav-payments">
+        <span class="ico">₿</span>Payments
+        <span class="pill hidden" id="s-pending-pill">0</span></button>
+    </nav>
+    <div class="divider"></div>
+    <button class="btn btn-sm btn-ghost btn-block" type="button" id="s-password">Change password</button>
+    <button class="btn btn-sm btn-danger btn-block" type="button" id="s-logout"
+            style="margin-top:.4rem">Sign out</button>
+  </aside>
+
+  <div id="s-views">
+    <!-- ------------------------------------------------------- overview -->
+    <section class="view active" data-pane="overview">
+      <div class="view-head">
+        <div>
+          <div class="eyebrow">// FULFILMENT DECK</div>
+          <h2>Overview</h2>
+        </div>
+        <button class="btn btn-sm" type="button" id="s-refresh">Refresh</button>
+      </div>
+      <div class="grid grid-4" id="s-stats"><div class="skel"></div><div class="skel"></div>
+        <div class="skel"></div><div class="skel"></div></div>
+
+      <div class="grid grid-2" style="margin-top:1.2rem">
+        <div class="card">
+          <div class="card-title">Latest orders</div>
+          <div id="s-ov-orders"><div class="skel"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Waiting for verification</div>
+          <div id="s-ov-pending"><div class="skel"></div></div>
+        </div>
+      </div>
+    </section>
+    <!-- --------------------------------------------------------- orders -->
+    <section class="view" data-pane="orders">
+      <div class="view-head">
+        <div>
+          <div class="eyebrow">// ASSIGNED TO ME</div>
+          <h2>My orders</h2>
+        </div>
+        <div class="tabs" id="s-ord-tabs">
+          <button class="tab active" type="button" data-status="">All
+            <span class="cnt" data-count="total">0</span></button>
+          <button class="tab" type="button" data-status="PENDING">Pending
+            <span class="cnt" data-count="PENDING">0</span></button>
+          <button class="tab" type="button" data-status="PROCESSING">Processing
+            <span class="cnt" data-count="PROCESSING">0</span></button>
+          <button class="tab" type="button" data-status="PAID">Paid
+            <span class="cnt" data-count="PAID">0</span></button>
+          <button class="tab" type="button" data-status="COMPLETED">Completed
+            <span class="cnt" data-count="COMPLETED">0</span></button>
+          <button class="tab" type="button" data-status="CANCELLED">Cancelled
+            <span class="cnt" data-count="CANCELLED">0</span></button>
+        </div>
+      </div>
+      <p class="hint" style="margin:-.6rem 0 1rem">
+        Marking an order completed needs a note — it is stored with the order and the
+        customer can read it. Refunds stay with a Master.
+      </p>
+      <div class="filters">
+        <input class="grow" id="s-ord-q" type="search" placeholder="Order ID, Gmail or product…">
+      </div>
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead><tr>
+            <th>Order ID</th><th>Customer</th><th>Product</th><th class="right">Coins</th>
+            <th>Status</th><th>Delivery</th><th>Date</th><th class="right">Actions</th>
+          </tr></thead>
+          <tbody id="s-ord-body"><tr><td colspan="8"><div class="skel"></div></td></tr></tbody>
+        </table>
+      </div>
+      <div class="center" style="margin-top:1rem">
+        <button class="btn btn-ghost hidden" type="button" id="s-ord-more">Load more</button>
+      </div>
+    </section>
+    <!-- ------------------------------------------------------- products -->
+    <section class="view" data-pane="products">
+      <div class="view-head">
+        <div>
+          <div class="eyebrow">// MY CATALOGUE</div>
+          <h2>My products</h2>
+        </div>
+        <span class="badge" id="s-prod-total">0 total</span>
+      </div>
+      <p class="hint" style="margin:-.6rem 0 1rem">
+        Read-only. A Master assigns products to a seller and owns the pricing, the
+        media and the deliverable file.
+      </p>
+      <div id="s-prod-list"><div class="skel" style="height:120px"></div></div>
+    </section>
+
+    <!-- ------------------------------------------------------- payments -->
+    <section class="view" data-pane="payments">
+      <div class="view-head">
+        <div>
+          <div class="eyebrow">// COIN TOP-UP VERIFICATION</div>
+          <h2>Payment requests</h2>
+        </div>
+        <div class="tabs" id="s-pay-tabs">
+          <button class="tab active" type="button" data-status="PENDING">Pending
+            <span class="cnt" data-count="PENDING">0</span></button>
+          <button class="tab" type="button" data-status="CONFIRMED">Confirmed
+            <span class="cnt" data-count="CONFIRMED">0</span></button>
+          <button class="tab" type="button" data-status="REJECTED">Rejected
+            <span class="cnt" data-count="REJECTED">0</span></button>
+        </div>
+      </div>
+      <p class="hint" style="margin:-.6rem 0 1rem">
+        Confirming credits the coins exactly once — the server runs the transition as a
+        conditional update, so a second click can never double-credit. Rejecting never adds coins.
+      </p>
+      <div id="s-pay-list"><div class="skel" style="height:120px"></div></div>
+      <div class="center" style="margin-top:1rem">
+        <button class="btn btn-ghost hidden" type="button" id="s-pay-more">Load more</button>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/seller.js" defer></script>
+{% endblock %}

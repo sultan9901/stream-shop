@@ -1,0 +1,21 @@
+# ==========================================================================
+# STREAM CORPORATION — development / test dependencies.
+#
+#   pip install -r backend/requirements-dev.txt
+#
+# Installs the full runtime set first, then the test-time tooling only. Pins
+# match `pip freeze` in .venv (Python 3.14.7) — the exact versions the 44-test
+# suite passed on. Nothing here is installed into the Docker runtime image.
+# ==========================================================================
+-r requirements.txt
+
+# --- Testing ---
+pytest==9.1.1
+# pytest.ini sets asyncio_mode = auto and both loop scopes to session, so the
+# async tests need this plugin; without it every `async def test_*` is skipped.
+pytest-asyncio==1.4.0
+
+# Nothing else belongs here: the suite drives the real ASGI app through
+# httpx.ASGITransport and builds real PNG/ZIP fixtures with pillow, and both
+# httpx and pillow are already runtime dependencies above. No mocking library,
+# no separate test client, no linter/formatter is used by this project.

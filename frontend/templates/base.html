@@ -1,0 +1,151 @@
+{#
+  STREAM CORPORATION — base shell.
+  Every server-rendered page extends this template. The shell itself never
+  decides authorisation: it renders neutral chrome and the JS asks the API who
+  the caller is, so a viewer opening /master only ever sees a login screen.
+#}<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ page_title or (app_name ~ ' — ' ~ tagline) }}{% endblock %}</title>
+  <meta name="description" content="{{ page_description or seo_description or tagline }}">
+  {% if seo_keywords %}<meta name="keywords" content="{{ seo_keywords }}">{% endif %}
+  <meta name="robots" content="{{ robots or 'index, follow' }}">
+  <meta name="theme-color" content="#05070f">
+  <link rel="canonical" href="{{ base_url }}{{ request.url.path }}">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="{{ app_name }}">
+  <meta property="og:title" content="{{ page_title or app_name }}">
+  <meta property="og:description" content="{{ page_description or seo_description or tagline }}">
+  <meta property="og:url" content="{{ base_url }}{{ request.url.path }}">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link rel="icon" href="/favicon.ico" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/css/core.css">
+  {% block head %}{% endblock %}
+</head>
+<body data-page="{{ page or 'page' }}">
+
+{% if intro_enabled and not no_intro %}
+<div id="sc-splash" data-duration="{{ intro_duration }}" data-enabled="1">
+  <div class="splash-in">
+    <div class="splash-mark glitch" data-text="{{ app_name }}">{{ app_name }}</div>
+    <div class="splash-sub">SECURE MARKETPLACE TERMINAL</div>
+    <div class="splash-log" aria-hidden="true"></div>
+    <div class="splash-bar"><i></i></div>
+    <div class="splash-pct">LOADING 0%</div>
+  </div>
+</div>
+{% endif %}
+
+<div class="sc-bg" aria-hidden="true"></div>
+<canvas id="sc-particles" aria-hidden="true"></canvas>
+<div class="sc-scan" aria-hidden="true"></div>
+{% if announcement %}<div class="announce">{{ announcement }}</div>{% endif %}
+
+<header class="sc-head">
+  <div class="wrap sc-head-in">
+    <a class="brand" href="/">
+      <span class="brand-mark">S</span>
+      <span class="brand-text">
+        <b>STREAM</b>
+        <span>CORPORATION</span>
+      </span>
+    </a>
+
+    {% block nav %}
+    <button class="btn btn-icon btn-ghost burger" id="sc-burger" type="button"
+            aria-label="Menu" aria-expanded="false" aria-controls="sc-nav">☰</button>
+    <nav class="sc-nav" id="sc-nav">
+      <a href="/" class="{{ 'active' if page == 'home' }}">Marketplace</a>
+      <a href="/wallet" class="{{ 'active' if page == 'wallet' }}">Wallet</a>
+      <a href="/orders" class="{{ 'active' if page == 'orders' }}">My Orders</a>
+    </nav>
+    {% endblock %}
+
+    <div class="grow"></div>
+
+    {% block head_actions %}
+    <span class="coin-chip hidden" id="sc-coin-chip" title="Your coin balance">
+      <span class="coin"><span data-coin-balance>0</span></span>
+    </span>
+    <button class="btn btn-icon btn-ghost bell hidden" id="sc-bell" type="button" aria-label="Notifications">
+      🔔<span class="bell-dot hidden" id="sc-bell-dot">0</span>
+    </button>
+    <div id="sc-user" class="row"></div>
+    {% endblock %}
+  </div>
+</header>
+
+<main>
+  {% block body %}{% endblock %}
+</main>
+
+{% block footer %}
+<footer class="sc-foot">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <a class="brand" href="/" style="margin-bottom:.6rem">
+          <span class="brand-mark">S</span>
+          <span class="brand-text"><b>STREAM</b><span>CORPORATION</span></span>
+        </a>
+        <p style="font-size:.84rem;max-width:34ch">{{ tagline }}</p>
+      </div>
+      <div>
+        <h4>Marketplace</h4>
+        <a href="/">All software</a>
+        <a href="/wallet">Buy coins</a>
+        <a href="/orders">My orders</a>
+      </div>
+      <div>
+        <h4>Support</h4>
+        {% if support_email %}<a href="mailto:{{ support_email }}">{{ support_email }}</a>{% endif %}
+        {% if support_whatsapp %}<a href="https://wa.me/{{ support_whatsapp | replace('+', '') | replace(' ', '') }}">WhatsApp {{ support_whatsapp }}</a>{% endif %}
+        <a href="/sitemap.xml">Sitemap</a>
+      </div>
+      <div>
+        <h4>Staff</h4>
+        <a href="/master" rel="nofollow">Master control</a>
+        <a href="/seller" rel="nofollow">Seller console</a>
+      </div>
+    </div>
+    <div class="foot-base">
+      <span>© {{ year }} {{ app_name }} — all rights reserved.</span>
+      <span class="live-dot"><i></i><span>OFFLINE</span></span>
+    </div>
+  </div>
+</footer>
+{% endblock %}
+
+<div class="scrim" id="sc-scrim" data-drawer-close></div>
+<aside class="drawer" id="sc-drawer" aria-label="Notifications">
+  <div class="drawer-head">
+    <div>
+      <div class="eyebrow" style="margin:0">LIVE FEED</div>
+      <b>Notifications</b>
+    </div>
+    <button class="modal-x" type="button" data-drawer-close aria-label="Close">&times;</button>
+  </div>
+  <div class="drawer-body" id="sc-note-body">
+    <div class="skel"></div><div class="skel"></div>
+  </div>
+</aside>
+
+<div class="toast-host" id="sc-toasts" role="status" aria-live="polite"></div>
+
+<script>
+  document.documentElement.classList.remove('no-js');
+  window.SC_CONFIG = {
+    googleEnabled: {{ 'true' if google_enabled else 'false' }},
+    devStub: {{ 'true' if dev_stub else 'false' }},
+    page: "{{ page or '' }}",
+    supportEmail: "{{ support_email or '' }}"
+  };
+</script>
+<script src="/static/js/core.js" defer></script>
+{% block scripts %}<script src="/static/js/shell.js" defer></script>{% endblock %}
+</body>
+</html>

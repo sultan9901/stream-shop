@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": {{ product.name | tojson }},
+  "description": {{ (product.tagline or product.name) | tojson }},
+  "applicationCategory": {{ (product.category.name if product.category else 'Software') | tojson }},
+  "operatingSystem": {{ (product.platform or 'Cross-platform') | tojson }},
+  "softwareVersion": {{ (product.version or '1.0') | tojson }},
+  "url": {{ (base_url ~ '/product/' ~ product.slug) | tojson }}
+}
+</script>
+{% endblock %}
+
+{% block body %}
+<div class="wrap" style="padding-top:1.4rem">
+  <nav class="mono" style="font-size:.76rem;color:var(--faint);margin-bottom:1rem">
+    <a href="/">marketplace</a> /
+    {% if product.category %}<a href="/?category={{ product.category.slug }}">{{ product.category.slug }}</a> /{% endif %}
+    <span>{{ product.slug }}</span>
+  </nav>
+
+  <div class="grid" style="grid-template-columns:minmax(0,1.55fr) minmax(280px,1fr);align-items:start">
+    <div>
+      <div class="card card-pad-0 corner" style="overflow:hidden">
+        <div class="pcard-media" style="aspect-ratio:16/9">
+          {% if product.banner_url or product.thumbnail_url %}
+          <img src="{{ product.banner_url or product.thumbnail_url }}" alt="{{ product.name }}"
+               width="1280" height="720">
+          {% else %}<div class="ph" style="font-size:4rem">▣</div>{% endif %}
+        </div>
+      </div>
+
+      {% if product.gallery %}
+      <div class="grid grid-4" style="margin-top:.8rem">
+        {% for m in product.gallery %}
+        <button class="card card-pad-0" data-shot="{{ m.url }}" style="overflow:hidden;cursor:zoom-in;border:0;padding:0">
+          <img src="{{ m.url }}" alt="{{ m.caption or product.name }}" loading="lazy"
+               style="display:block;width:100%;aspect-ratio:16/10;object-fit:cover">
+        </button>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% if product.demo_video_url %}
+      <div class="card" style="margin-top:1.1rem">
+        <div class="card-title"><span class="dot"></span>Demo</div>
+        <a class="btn" href="{{ product.demo_video_url }}" target="_blank" rel="noopener noreferrer">
+          ▶ Watch the demo video
+        </a>
+      </div>
+      {% endif %}
+
+      <div class="card" style="margin-top:1.1rem">
+        <div class="card-title"><span class="dot"></span>About this software</div>
+        <div class="muted" style="white-space:pre-wrap;font-size:.92rem">{{ product.description or 'No description provided yet.' }}</div>
+      </div>
+
+      {% if product.delivery_note %}
+      <div class="card" style="margin-top:1.1rem">
+        <div class="card-title"><span class="dot"></span>Delivery notes</div>
+        <div class="muted" style="white-space:pre-wrap;font-size:.9rem">{{ product.delivery_note }}</div>
+      </div>
+      {% endif %}
+    </div>
+
+    <aside class="card corner neon-edge" style="position:sticky;top:calc(var(--head-h) + 1rem)">
+      <div class="eyebrow">{{ product.category.name if product.category else 'SOFTWARE' }}</div>
+      <h1 style="font-size:1.5rem">{{ product.name }}</h1>
+      {% if product.tagline %}<p style="font-size:.9rem">{{ product.tagline }}</p>{% endif %}
+
+      <div class="row-wrap" style="margin:.7rem 0">
+        {% if product.version %}<span class="badge">v{{ product.version }}</span>{% endif %}
+        {% if product.platform %}<span class="badge">{{ product.platform }}</span>{% endif %}
+        {% if product.is_featured %}<span class="badge badge-violet">Featured</span>{% endif %}
+        {% if product.in_stock %}
+          <span class="badge badge-ok">In stock</span>
+        {% else %}
+          <span class="badge badge-bad">Sold out</span>
+        {% endif %}
+      </div>
+
+      <div class="divider"></div>
+      <div class="spread" style="align-items:flex-end">
+        <div>
+          <div class="eyebrow" style="margin:0">PRICE</div>
+          <span class="coin coin-lg">{{ '{:,}'.format(product.coin_price) }}</span>
+        </div>
+        <div class="right">
+          <div class="eyebrow" style="margin:0">SOLD</div>
+          <b class="mono">{{ '{:,}'.format(product.sold_count) }}</b>
+        </div>
+      </div>
+
+      <div id="buy-zone" style="margin-top:1.1rem">
+        <div class="skel" style="height:44px;border-radius:999px"></div>
+      </div>
+
+      <div class="divider"></div>
+      <dl class="kv">
+        <dt>Seller</dt><dd>{{ product.seller.label if product.seller else 'STREAM CORPORATION' }}</dd>
+        <dt>Delivery</dt><dd>Gmail + secure link</dd>
+        <dt>Listed</dt><dd class="mono" data-date="{{ product.created_at }}">—</dd>
+        <dt>Product ID</dt><dd>{{ product.id }}</dd>
+      </dl>
+
+      <p class="hint" style="margin-top:.8rem">
+        Coins are deducted server-side inside one database transaction. Your download
+        link is private, expiring and tied to your order.
+      </p>
+    </aside>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/shell.js" defer></script>
+<script id="product-data" type="application/json">{{ product | tojson }}</script>
+<script src="/static/js/product.js" defer></script>
+{% endblock %}

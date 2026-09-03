@@ -1,0 +1,10 @@
+# Alembic revisions for STREAM CORPORATION live here.
+#
+# The first revision was produced with --autogenerate against the models and is
+# the full initial schema. Create further revisions with:
+#
+#     alembic revision --autogenerate -m "describe the change"
+#
+# Always read a generated revision before applying it: autogenerate cannot see
+# data backfills, and it renders SQLite-unfriendly ALTERs unless batch mode is
+# used (env.py enables render_as_batch for exactly that reason).

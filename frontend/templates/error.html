@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{#
+  Shared error page for 400/401/403/404/409/410/422/429/500/503. The handler in
+  app.main passes `code`, `title` and `message`; nothing sensitive is ever echoed
+  here — the message is the operator-facing text the raiser chose.
+#}
+
+{% block title %}{{ code }} {{ title }} — {{ app_name }}{% endblock %}
+
+{% block body %}
+<div class="wrap" style="padding:3rem 0 4rem">
+  <div class="card corner neon-edge center" style="max-width:640px;margin:0 auto">
+    <div class="err-code glitch" data-text="{{ code }}">{{ code }}</div>
+    <div class="eyebrow">// {{ title | upper }}</div>
+    <h1 style="font-size:1.4rem;margin-top:.3rem">{{ title }}</h1>
+
+    {% if message %}
+    <p class="muted" style="font-size:.92rem;max-width:46ch;margin:.6rem auto 0">{{ message }}</p>
+    {% endif %}
+
+    {% if code == 401 %}
+    <p class="hint" style="margin-top:.7rem">Sign in and try again — your session may have expired.</p>
+    {% elif code == 403 %}
+    <p class="hint" style="margin-top:.7rem">This surface is restricted. Staff panels are reachable only
+      with a Master or Seller account bound to this device.</p>
+    {% elif code == 410 %}
+    <p class="hint" style="margin-top:.7rem">Download links expire on purpose. Open the order in
+      <a href="/orders">My orders</a> and ask for a fresh one.</p>
+    {% elif code == 429 %}
+    <p class="hint" style="margin-top:.7rem">Slow down for a moment, then retry — the rate limit
+      protects everyone's wallet.</p>
+    {% elif code >= 500 %}
+    <p class="hint" style="margin-top:.7rem">Nothing was charged. Coin movements only ever commit
+      inside a completed database transaction.</p>
+    {% endif %}
+
+    <div class="divider"></div>
+    <div class="row-wrap" style="justify-content:center">
+      <a class="btn btn-primary" href="/">Back to marketplace</a>
+      <a class="btn" href="/orders">My orders</a>
+      {% if support_email %}<a class="btn btn-ghost" href="mailto:{{ support_email }}">Contact support</a>{% endif %}
+    </div>
+
+    <div class="term" style="margin-top:1.4rem;text-align:left"><span class="c">// trace</span>
+<span class="k">status</span>      <span class="v">{{ code }} {{ title }}</span>
+<span class="k">path</span>        <span class="v">{{ request.url.path }}</span>
+<span class="k">surface</span>     <span class="v">public</span></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}<script src="/static/js/shell.js" defer></script>{% endblock %}

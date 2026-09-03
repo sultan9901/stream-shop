@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block body %}
+<section class="hero wrap">
+  <div class="eyebrow">// SECURE SOFTWARE EXCHANGE · V1.0</div>
+  <h1><span class="glitch" data-text="STREAM CORPORATION">STREAM CORPORATION</span></h1>
+  <p class="lead">{{ tagline }} — top up your wallet with Coins, buy premium software instantly,
+    and receive it in your Gmail with a private, expiring download link.</p>
+
+  <div class="row-wrap" style="margin-top:1.4rem">
+    <a class="btn btn-primary btn-lg" href="#catalogue">Browse software</a>
+    <a class="btn btn-lg" href="/wallet">Buy coins</a>
+  </div>
+
+  <div class="hero-stats">
+    <div class="hero-stat"><b id="stat-products">—</b><span>Products live</span></div>
+    <div class="hero-stat"><b id="stat-categories">{{ categories | length }}</b><span>Categories</span></div>
+    <div class="hero-stat"><b>Instant</b><span>Gmail delivery</span></div>
+    <div class="hero-stat"><b>Ledger</b><span>Backed wallet</span></div>
+  </div>
+</section>
+
+{% if categories %}
+<section class="wrap">
+  <div class="sec-head">
+    <div>
+      <div class="eyebrow">// CATEGORIES</div>
+      <h2>Pick a stack</h2>
+    </div>
+  </div>
+  <div class="grid grid-4" id="cat-strip">
+    <button class="cat-chip active" data-cat="">
+      <span class="ico">✦</span><span>All software</span>
+    </button>
+    {% for c in categories %}
+    <button class="cat-chip" data-cat="{{ c.slug }}">
+      <span class="ico">{{ c.icon or '▣' }}</span>
+      <span>{{ c.name }}</span>
+      <span class="n">{{ c.product_count or 0 }}</span>
+    </button>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+{% if featured %}
+<section class="wrap" id="featured">
+  <div class="sec-head">
+    <div>
+      <div class="eyebrow">// FEATURED</div>
+      <h2>Hand-picked releases</h2>
+    </div>
+    <span class="badge badge-neon">{{ featured | length }} items</span>
+  </div>
+  <div class="grid grid-3">
+    {% for p in featured %}
+    <a class="card pcard" href="/product/{{ p.slug }}">
+      <div class="pcard-media">
+        {% if p.thumbnail_url %}
+        <img src="{{ p.thumbnail_url }}" alt="{{ p.name }}" loading="lazy" width="480" height="300">
+        {% else %}<div class="ph">▣</div>{% endif %}
+        <div class="pcard-badges">
+          <span class="badge badge-violet">Featured</span>
+          {% if not p.in_stock %}<span class="badge badge-bad">Sold out</span>{% endif %}
+        </div>
+      </div>
+      <div class="pcard-body">
+        <h3>{{ p.name }}</h3>
+        <p class="tag">{{ p.tagline or '' }}</p>
+        <div class="pcard-foot">
+          <span class="coin">{{ '{:,}'.format(p.coin_price) }}</span>
+          <span class="badge">{{ p.category.name if p.category else 'General' }}</span>
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<section class="wrap" id="catalogue">
+  <div class="sec-head">
+    <div>
+      <div class="eyebrow">// CATALOGUE</div>
+      <h2>All software</h2>
+    </div>
+    <div class="row-wrap">
+      <input id="q" type="search" placeholder="Search software…" style="min-width:220px" aria-label="Search software">
+      <select id="sort" aria-label="Sort products">
+        <option value="featured">Featured first</option>
+        <option value="newest">Newest</option>
+        <option value="popular">Best selling</option>
+        <option value="price_asc">Price: low → high</option>
+        <option value="price_desc">Price: high → low</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="grid grid-3" id="product-grid" aria-live="polite">
+    <div class="skel" style="height:250px"></div>
+    <div class="skel" style="height:250px"></div>
+    <div class="skel" style="height:250px"></div>
+  </div>
+
+  <div class="center" style="margin-top:1.6rem">
+    <button class="btn hidden" id="load-more" type="button">Load more</button>
+  </div>
+</section>
+
+<section class="wrap">
+  <div class="grid grid-2">
+    <div class="card corner neon-edge">
+      <div class="card-title"><span class="dot"></span>How it works</div>
+      <ol class="muted" style="padding-left:1.1rem;margin:0;font-size:.9rem;line-height:1.9">
+        <li>Sign in with Google — your Gmail is the delivery address.</li>
+        <li>Buy a coin package and upload your payment screenshot.</li>
+        <li>A Master or authorised Seller verifies it; coins land in your wallet.</li>
+        <li>Spend coins on any product — the order and the download are created instantly.</li>
+      </ol>
+    </div>
+    <div class="card corner">
+      <div class="card-title"><span class="dot"></span>Security posture</div>
+      <div class="term"><span class="c">// every coin movement is a ledger row</span>
+<span class="k">wallet</span>      <span class="v">append-only ledger, server-side only</span>
+<span class="k">purchase</span>    <span class="v">row-locked, idempotent, transactional</span>
+<span class="k">payments</span>    <span class="v">manual review — upload never credits coins</span>
+<span class="k">downloads</span>   <span class="v">per-order expiring token, attempt-capped</span>
+<span class="k">staff</span>       <span class="v">device-bound sessions + full audit log</span></div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/shell.js" defer></script>
+<script src="/static/js/home.js" defer></script>
+{% endblock %}

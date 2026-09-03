@@ -1,0 +1,92 @@
+# ==========================================================================
+# STREAM CORPORATION — full production-shaped stack.
+#
+#   cp .env.example .env      # then edit it (see README §12)
+#   docker compose up -d --build
+#   docker compose logs -f app
+#
+# Services
+#   db     PostgreSQL 17   — the real database
+#   redis  Redis 8         — rate-limit counters + cross-worker WebSocket fan-out
+#   app    FastAPI/uvicorn — migrates on start, then serves
+#
+# The app never gets a `.env` baked into its image: values come from `env_file`
+# at run time. Anything set under `environment:` below overrides the .env value
+# so the container always talks to the compose-internal hostnames.
+# ==========================================================================
+
+name: stream-corporation
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-stream}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-streampass}
+      POSTGRES_DB: ${POSTGRES_DB:-stream_corporation}
+      # deterministic collation, so ORDER BY does not shift between hosts
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-stream} -d ${POSTGRES_DB:-stream_corporation}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    # Not published to the host by default. Uncomment to inspect with psql/pgAdmin.
+    # ports:
+    #   - "127.0.0.1:5432:5432"
+
+  redis:
+    image: redis:8-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--save", "60", "1"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # --- wiring that must point at the compose services, not localhost ---
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-stream}:${POSTGRES_PASSWORD:-streampass}@db:5432/${POSTGRES_DB:-stream_corporation}
+      REDIS_URL: redis://redis:6379/0
+      UPLOAD_DIR: /app/uploads
+      APP_HOST: 0.0.0.0
+      APP_PORT: "8000"
+      WEB_CONCURRENCY: "${WEB_CONCURRENCY:-2}"
+      RUN_MIGRATIONS: "true"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      # Bound to loopback: terminate TLS in a reverse proxy in front of this.
+      - "${APP_BIND:-127.0.0.1}:${APP_PUBLISHED_PORT:-8000}:8000"
+    volumes:
+      # Screenshots, product files and console-backend .eml files must outlive
+      # the container. This is the one piece of state that is NOT in Postgres.
+      - uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 45s
+
+volumes:
+  pgdata:
+  redisdata:
+  uploads:
